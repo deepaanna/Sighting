@@ -104,6 +104,7 @@ func _ready() -> void:
 
 	_daily            = DailyCryptid.get_today()
 	_sweet_spot       = _daily.get("sweet_spot", 3)
+	_cryptid.setup(_daily.get("cryptid_type", "bigfoot") as String)
 	_zone_label.text  = _daily.get("zone_display", "UNKNOWN")
 	_hint_label.text  = ""
 	_running          = true

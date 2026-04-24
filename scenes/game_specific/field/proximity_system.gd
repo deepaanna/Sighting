@@ -16,11 +16,12 @@ const PULSE_INTERVAL := [0.0, 0.0, 4.0, 2.0, 1.0]
 
 var _current_level := 0
 var _pulse_timer   := 0.0
-var _is_android    := false
+var _has_haptics   := false
 
 
 func _ready() -> void:
-	_is_android = OS.get_name() == "Android"
+	var platform := OS.get_name()
+	_has_haptics = platform == "Android" or platform == "iOS"
 
 
 # =====================================================================
@@ -86,7 +87,7 @@ func _double_buzz(duration: int, amplitude: float, gap: float) -> void:
 
 
 func _buzz(duration: int, amplitude: float) -> void:
-	if _is_android:
+	if _has_haptics:
 		Input.vibrate_handheld(duration, amplitude)
 
 

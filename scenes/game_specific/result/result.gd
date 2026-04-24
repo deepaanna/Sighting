@@ -24,8 +24,9 @@ const GRADE_TABLE: Array = [
 @onready var _unlock_label:  Label      = $HUD/Content/UnlockLabel
 @onready var _home_btn:      Button     = $HUD/Content/NavRow/HomeButton
 @onready var _retry_btn:     Button     = $HUD/Content/NavRow/RetryButton
-@onready var _share_btn:     Button     = $HUD/Content/ActionRow/ShareButton
+@onready var _share_btn:      Button     = $HUD/Content/ActionRow/ShareButton
 @onready var _gallery_btn:   Button     = $HUD/Content/ActionRow/GalleryButton
+@onready var _action_row:    HBoxContainer = $HUD/Content/ActionRow
 
 var _score:        int    = 0
 var _grade_letter: String = "F"
@@ -113,6 +114,16 @@ func _ready() -> void:
 	UIStyler.style_button(_share_btn,   UIStyler.ACCENT_MUTED)
 	UIStyler.style_button(_gallery_btn, UIStyler.ACCENT_MUTED)
 	UIStyler.style_button(_boost_btn,   UIStyler.ACCENT_ORANGE)
+
+	# Share Feed button — added dynamically so it only appears for non-F grades
+	if _grade_idx < 5:
+		var feed_btn                    := Button.new()
+		feed_btn.text                    = "SHARE FEED"
+		feed_btn.size_flags_horizontal   = Control.SIZE_EXPAND_FILL
+		feed_btn.custom_minimum_size     = Vector2(0, 40)
+		UIStyler.style_button(feed_btn, UIStyler.ACCENT_MUTED)
+		feed_btn.pressed.connect(_on_share_feed_pressed)
+		_action_row.add_child(feed_btn)
 
 	queue_redraw()
 
@@ -235,6 +246,22 @@ func _on_share_pressed() -> void:
 		ShareManager.capture_and_share(text, {
 			"score": _score, "grade": _grade_letter, "game_name": "SIGHTING!",
 		})
+
+
+func _on_share_feed_pressed() -> void:
+	var comment := _theory_feed.get_top_comment()
+	if comment.is_empty():
+		return
+	var text := "%s\n\n%s sighting — Grade %s (%d/100)\n#SIGHTING #ConspiracyCodex" % [
+		comment, _ctype.to_upper(), _grade_letter, _score,
+	]
+	var filename := Codex.get_value("sighting", "_last_photo_file", "") as String
+	if filename != "" and FileAccess.file_exists("user://gallery/" + filename):
+		ShareManager._system_share(
+			ProjectSettings.globalize_path("user://gallery/" + filename), text
+		)
+	else:
+		ShareManager.capture_and_share(text, {"game_name": "SIGHTING!"})
 
 
 func _on_gallery_pressed() -> void:

@@ -1,12 +1,17 @@
-## Cryptid — Visual token for the cryptid on the field.
-## Concealed until researcher enters camera range.
-## Draws a rough, intentionally-sketchy Bigfoot silhouette.
-## Step 6 will replace _draw() with per-cryptid sprites + blur shaders.
+## Cryptid — Visual token on the field hex grid.
+## Hidden until researcher enters camera range, then briefly revealed before
+## the camera phase launches. Draws a per-cryptid silhouette.
 
 extends Node2D
 
 var _revealed := false
-var _tween: Tween
+var _ctype    := "bigfoot"
+var _tween:   Tween
+
+
+func setup(ctype: String) -> void:
+	_ctype = ctype
+	queue_redraw()
 
 
 func reveal() -> void:
@@ -25,7 +30,6 @@ func conceal() -> void:
 	queue_redraw()
 
 
-## Tween to new world position — slower than the researcher to feel lumbering.
 func move_to(world_pos: Vector2) -> void:
 	if _tween:
 		_tween.kill()
@@ -36,30 +40,102 @@ func move_to(world_pos: Vector2) -> void:
 func _draw() -> void:
 	if not _revealed:
 		return
-	var fur  := Color(0.20, 0.13, 0.08)
-	var eye  := Color(0.92, 0.60, 0.05)
-	# Feet
-	_blob(Vector2(-5, 15), 7, 3, fur)
-	_blob(Vector2(5, 15), 7, 3, fur)
-	# Legs
-	_blob(Vector2(-5, 7), 4, 8, fur)
-	_blob(Vector2(5, 7), 4, 8, fur)
-	# Body
-	_blob(Vector2(0, -1), 11, 10, fur)
-	# Arms (raised, menacing)
-	_blob(Vector2(-15, -5), 5, 9, fur)
-	_blob(Vector2(15, -5), 5, 9, fur)
-	# Head
-	_blob(Vector2(0, -14), 9, 9, fur)
-	# Eyes
+	match _ctype:
+		"nessie":     _draw_nessie()
+		"mothman":    _draw_mothman()
+		"chupacabra": _draw_chupacabra()
+		_:            _draw_bigfoot()
+
+
+# ── Bigfoot ───────────────────────────────────────────────────────────────
+
+func _draw_bigfoot() -> void:
+	var fur := Color(0.20, 0.13, 0.08)
+	var eye := Color(0.92, 0.60, 0.05)
+	_blob(Vector2(-5, 15),  7,  3, fur)
+	_blob(Vector2( 5, 15),  7,  3, fur)
+	_blob(Vector2(-5,  7),  4,  8, fur)
+	_blob(Vector2( 5,  7),  4,  8, fur)
+	_blob(Vector2( 0, -1), 11, 10, fur)
+	_blob(Vector2(-15, -5), 5,  9, fur)
+	_blob(Vector2( 15, -5), 5,  9, fur)
+	_blob(Vector2( 0, -14), 9,  9, fur)
 	draw_circle(Vector2(-3, -15), 2.2, eye)
-	draw_circle(Vector2(3, -15), 2.2, eye)
+	draw_circle(Vector2( 3, -15), 2.2, eye)
 
 
-## Approximate ellipse via polygon.
+# ── Nessie ────────────────────────────────────────────────────────────────
+
+func _draw_nessie() -> void:
+	var body  := Color(0.10, 0.24, 0.18)
+	var water := Color(0.08, 0.16, 0.30, 0.55)
+	var eye   := Color(0.88, 0.68, 0.08)
+	# Humps
+	_blob(Vector2(-12, 2), 7, 5, body)
+	_blob(Vector2(  0,-3), 9, 6, body)
+	_blob(Vector2( 10, 3), 5, 4, body)
+	# Neck + head
+	var neck := PackedVector2Array([
+		Vector2(3, -5), Vector2(8, -5), Vector2(11, -18), Vector2(6, -19)
+	])
+	draw_colored_polygon(neck, body)
+	_blob(Vector2(7, -21), 4, 3, body)
+	draw_circle(Vector2(10, -22), 1.4, eye)
+	# Water surface
+	draw_line(Vector2(-18, 7), Vector2(18, 7), water, 2.5)
+	draw_line(Vector2(-18, 10), Vector2(18, 10), water, 1.5)
+
+
+# ── Mothman ───────────────────────────────────────────────────────────────
+
+func _draw_mothman() -> void:
+	var wing  := Color(0.07, 0.05, 0.10)
+	var torso := Color(0.12, 0.08, 0.16)
+	var eye   := Color(0.92, 0.06, 0.04)
+	# Wings
+	var lw := PackedVector2Array([
+		Vector2(0, -6), Vector2(-22, -13), Vector2(-22, 5), Vector2(-8, 8)
+	])
+	var rw := PackedVector2Array([
+		Vector2(0, -6), Vector2( 22, -13), Vector2( 22, 5), Vector2( 8, 8)
+	])
+	draw_colored_polygon(lw, wing)
+	draw_colored_polygon(rw, wing)
+	_blob(Vector2(0, 2), 5, 11, torso)
+	# Glowing eyes
+	draw_circle(Vector2(-3, -8), 3.0, Color(eye.r, eye.g, eye.b, 0.45))
+	draw_circle(Vector2( 3, -8), 3.0, Color(eye.r, eye.g, eye.b, 0.45))
+	draw_circle(Vector2(-3, -8), 1.8, eye)
+	draw_circle(Vector2( 3, -8), 1.8, eye)
+
+
+# ── Chupacabra ────────────────────────────────────────────────────────────
+
+func _draw_chupacabra() -> void:
+	var hide  := Color(0.20, 0.14, 0.10)
+	var spine := Color(0.52, 0.16, 0.06)
+	var eye   := Color(0.82, 0.06, 0.04)
+	# Crouched body
+	var bod := PackedVector2Array([
+		Vector2(-10, 12), Vector2(-14, 2), Vector2(-8, -8),
+		Vector2( 2, -11), Vector2(12, -3), Vector2(13, 9),
+		Vector2( 3, 14),
+	])
+	draw_colored_polygon(bod, hide)
+	_blob(Vector2(-8, 15), 3, 4, hide)
+	_blob(Vector2( 5, 16), 3, 4, hide)
+	# Spine ridges
+	for i: int in 4:
+		draw_circle(Vector2(-5.0 + i * 4.5, -9.5), 2.2, spine)
+	draw_circle(Vector2(-6, -4), 2.2, eye)
+	draw_circle(Vector2(-6, -4), 1.0, Color(1.0, 0.4, 0.3))
+
+
+# ── Shared ────────────────────────────────────────────────────────────────
+
 func _blob(center: Vector2, rx: float, ry: float, color: Color, segs: int = 10) -> void:
 	var p := PackedVector2Array()
-	for i in segs:
-		var a := TAU * i / segs
+	for i: int in segs:
+		var a := TAU * float(i) / float(segs)
 		p.append(center + Vector2(cos(a) * rx, sin(a) * ry))
 	draw_colored_polygon(p, color)

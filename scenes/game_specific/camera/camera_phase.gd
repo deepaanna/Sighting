@@ -372,10 +372,51 @@ func _grant_extra_shot() -> void:
 func _on_slider_changed(val: float) -> void:
 	_slider_value    = val / 100.0
 	_slider_pct.text = "%d%%" % int(val)
+	if not Codex.get_value("sighting", "slider_tooltip_shown", false):
+		if val < 25.0 or val > 75.0:
+			Codex.set_value("sighting", "slider_tooltip_shown", true)
+			_show_slider_tooltip(val > 50.0)
+
+
+func _show_slider_tooltip(is_believer: bool) -> void:
+	var side := "BELIEVER" if is_believer else "SKEPTIC"
+	var lbl                  := Label.new()
+	lbl.text                  = "%s extremes cut your score.\nDrag the dial toward CENTER\nfor the sharpest result." % side
+	lbl.horizontal_alignment  = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.autowrap_mode         = TextServer.AUTOWRAP_WORD
+	lbl.size                  = Vector2(288, 68)
+	lbl.position              = Vector2(36, 292)
+	lbl.z_index               = 20
+	lbl.modulate              = Color(1.0, 0.78, 0.18, 0.0)
+	var bg                   := ColorRect.new()
+	bg.color                  = Color(0.0, 0.0, 0.0, 0.84)
+	bg.size                   = lbl.size
+	bg.mouse_filter           = Control.MOUSE_FILTER_IGNORE
+	lbl.add_child(bg)
+	lbl.move_child(bg, 0)
+	add_child(lbl)
+	var tw := create_tween()
+	tw.tween_property(lbl, "modulate:a", 1.0, 0.30)
+	tw.tween_interval(4.5)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.40)
+	tw.tween_callback(lbl.queue_free)
 
 
 func _flash_shutter() -> void:
 	AudioManager.play_sfx("shutter")
+
+	# Punchy 2-step screen shake — shakes viewfinder and HUD together
+	var dx := randf_range(5.0, 9.0) * (1.0 if randi() % 2 == 0 else -1.0)
+	var dy := randf_range(3.0, 6.0) * (1.0 if randi() % 2 == 0 else -1.0)
+	var st := create_tween()
+	st.tween_property(self,  "position", Vector2(dx, dy),                   0.028)
+	st.tween_property(self,  "position", Vector2(-dx * 0.35, -dy * 0.35),   0.032)
+	st.tween_property(self,  "position", Vector2.ZERO,                       0.055)
+	var ht := create_tween()
+	ht.tween_property($HUD, "offset", Vector2(dx, dy),                      0.028)
+	ht.tween_property($HUD, "offset", Vector2(-dx * 0.35, -dy * 0.35),      0.032)
+	ht.tween_property($HUD, "offset", Vector2.ZERO,                         0.055)
+
 	var flash        := ColorRect.new()
 	flash.color       = Color(1.0, 1.0, 1.0, 0.75)
 	flash.set_anchors_preset(Control.PRESET_FULL_RECT)

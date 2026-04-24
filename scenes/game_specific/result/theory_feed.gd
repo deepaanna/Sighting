@@ -95,6 +95,12 @@ const TEMPLATES: Dictionary = {
 
 # ── Public API ────────────────────────────────────────────────────────────
 
+func get_top_comment() -> String:
+	if _comments.is_empty():
+		return ""
+	return (_comments[0] as Label).text
+
+
 func start(grade_idx: int, cryptid: String, zone: String) -> void:
 	_reset()
 	if grade_idx >= 5:
