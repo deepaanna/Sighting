@@ -1,0 +1,128 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_specific/menu/main_menu.gd" id="1_menu"]
+
+[node name="MainMenu" type="Node2D"]
+script = ExtResource("1_menu")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Content" type="VBoxContainer" parent="HUD"]
+offset_left = 20.0
+offset_top = 36.0
+offset_right = 340.0
+offset_bottom = 626.0
+
+[node name="TitleLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "SIGHTING!"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 52
+
+[node name="SubLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "A CONSPIRACY CODEX GAME"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 11
+modulate = Color(0.6, 0.6, 0.6, 1)
+
+[node name="Spacer1" type="Control" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 16)
+
+[node name="TodayHeader" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "── TODAY'S EXPEDITION ──"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+modulate = Color(0.60, 0.60, 0.60, 1)
+
+[node name="CryptidLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "BIGFOOT"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 36
+
+[node name="ZoneLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "PACIFIC NW"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 16
+
+[node name="WeatherLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "Clear  ·  Sweet Spot: Zone 3"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+modulate = Color(0.62, 0.62, 0.62, 1)
+
+[node name="Spacer2" type="Control" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 18)
+
+[node name="StatsRow" type="HBoxContainer" parent="HUD/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="StreakLabel" type="Label" parent="HUD/Content/StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "First run!"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+
+[node name="BestLabel" type="Label" parent="HUD/Content/StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "No score yet"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+
+[node name="XPLabel" type="Label" parent="HUD/Content/StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "0 XP"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+
+[node name="Spacer3" type="Control" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 18)
+
+[node name="StartButton" type="Button" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 68)
+text = "START EXPEDITION"
+theme_override_font_sizes/font_size = 20
+
+[node name="Spacer4" type="Control" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 8)
+
+[node name="ActionRow" type="HBoxContainer" parent="HUD/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GalleryButton" type="Button" parent="HUD/Content/ActionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 48)
+text = "GALLERY"
+
+[node name="FeedButton" type="Button" parent="HUD/Content/ActionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 48)
+text = "THEORY FEED"
+
+[node name="Spacer5" type="Control" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 10)
+
+[node name="FooterLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 11
+modulate = Color(0.50, 0.50, 0.50, 1)

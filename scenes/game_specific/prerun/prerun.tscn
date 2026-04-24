@@ -1,0 +1,82 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_specific/prerun/prerun.gd" id="1_prerun"]
+
+[node name="PreRun" type="Node2D"]
+script = ExtResource("1_prerun")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="HeaderLabel" type="Label" parent="HUD"]
+offset_left = 0.0
+offset_top = 12.0
+offset_right = 360.0
+offset_bottom = 34.0
+text = "EXPEDITION BRIEFING"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+modulate = Color(0.55, 0.55, 0.55, 1)
+
+[node name="Content" type="VBoxContainer" parent="HUD"]
+offset_left = 24.0
+offset_top = 350.0
+offset_right = 336.0
+offset_bottom = 628.0
+theme_override_constants/separation = 5
+
+[node name="TargetLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "BIGFOOT"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 30
+
+[node name="ZoneLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "Zone: PACIFIC NW"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 15
+
+[node name="WeatherLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "Weather: Clear"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 13
+modulate = Color(0.68, 0.68, 0.68, 1)
+
+[node name="ConditionLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 11
+modulate = Color(0.55, 0.55, 0.55, 1)
+
+[node name="DistanceLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "Optimal range: MEDIUM"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+modulate = Color(0.72, 0.80, 0.58, 1)
+
+[node name="StreakLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+visible = false
+
+[node name="Spacer" type="Control" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 10)
+
+[node name="BeginButton" type="Button" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 62)
+text = "BEGIN EXPEDITION"
+theme_override_font_sizes/font_size = 18
+
+[node name="BackButton" type="Button" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "BACK"

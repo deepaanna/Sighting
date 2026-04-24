@@ -1,0 +1,97 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_specific/camera/camera_phase.gd" id="1_camera"]
+[ext_resource type="Script" path="res://scenes/game_specific/camera/cryptid_view.gd" id="2_cryptid_view"]
+[ext_resource type="Script" path="res://scenes/game_specific/camera/viewfinder_frame.gd" id="3_vf_frame"]
+
+[node name="CameraPhase" type="Node2D"]
+script = ExtResource("1_camera")
+
+[node name="CryptidViewport" type="SubViewport" parent="."]
+size = Vector2i(320, 290)
+transparent_bg = true
+disable_3d = true
+canvas_item_default_texture_filter = 1
+render_target_update_mode = 4
+
+[node name="CryptidView" type="Node2D" parent="CryptidViewport"]
+position = Vector2(160, 145)
+script = ExtResource("2_cryptid_view")
+
+[node name="ViewportDisplay" type="TextureRect" parent="."]
+offset_left = 20.0
+offset_top = 50.0
+offset_right = 340.0
+offset_bottom = 340.0
+expand_mode = 1
+stretch_mode = 5
+z_index = 1
+
+[node name="ViewfinderFrame" type="Node2D" parent="."]
+script = ExtResource("3_vf_frame")
+z_index = 2
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TopBar" type="HBoxContainer" parent="HUD"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 360.0
+offset_bottom = 46.0
+
+[node name="TimerLabel" type="Label" parent="HUD/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "0:20"
+horizontal_alignment = 0
+
+[node name="CryptidLabel" type="Label" parent="HUD/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BIGFOOT · PACIFIC NW"
+horizontal_alignment = 2
+
+[node name="Controls" type="VBoxContainer" parent="HUD"]
+offset_left = 20.0
+offset_top = 352.0
+offset_right = 340.0
+offset_bottom = 635.0
+
+[node name="CredibilityHeader" type="Label" parent="HUD/Controls"]
+layout_mode = 2
+text = "CREDIBILITY"
+horizontal_alignment = 1
+
+[node name="SliderRow" type="HBoxContainer" parent="HUD/Controls"]
+layout_mode = 2
+
+[node name="SkepticLabel" type="Label" parent="HUD/Controls/SliderRow"]
+layout_mode = 2
+text = "SKEPTIC"
+
+[node name="CredibilitySlider" type="HSlider" parent="HUD/Controls/SliderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 100.0
+value = 50.0
+
+[node name="BelieverLabel" type="Label" parent="HUD/Controls/SliderRow"]
+layout_mode = 2
+text = "BELIEVER"
+
+[node name="CredibilityPct" type="Label" parent="HUD/Controls"]
+layout_mode = 2
+text = "50%"
+horizontal_alignment = 1
+
+[node name="CaptureButton" type="Button" parent="HUD/Controls"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+text = "📸  CAPTURE"
+
+[node name="ShotsLabel" type="Label" parent="HUD/Controls"]
+layout_mode = 2
+text = "Shots remaining: 3"
+horizontal_alignment = 1

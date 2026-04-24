@@ -1,0 +1,143 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_specific/result/result.gd" id="1_result"]
+[ext_resource type="Script" path="res://scenes/game_specific/result/theory_feed.gd" id="2_tf"]
+
+[node name="Result" type="Node2D"]
+script = ExtResource("1_result")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Content" type="VBoxContainer" parent="HUD"]
+offset_left = 40.0
+offset_top = 100.0
+offset_right = 320.0
+offset_bottom = 638.0
+theme_override_constants/separation = 4
+
+[node name="GradeLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "B"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 72
+
+[node name="ScoreLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "Score: 50 / 100"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 20
+
+[node name="VerdictLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 15
+
+[node name="TheoryFeedSection" type="VBoxContainer" parent="HUD/Content"]
+layout_mode = 2
+script = ExtResource("2_tf")
+theme_override_constants/separation = 2
+
+[node name="FeedHeader" type="Label" parent="HUD/Content/TheoryFeedSection"]
+layout_mode = 2
+text = "── THEORY FEED ──"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="UpvoteRow" type="HBoxContainer" parent="HUD/Content/TheoryFeedSection"]
+layout_mode = 2
+
+[node name="UpLabel" type="Label" parent="HUD/Content/TheoryFeedSection/UpvoteRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "↑  0"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+
+[node name="DownLabel" type="Label" parent="HUD/Content/TheoryFeedSection/UpvoteRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "↓  0"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+
+[node name="FeedContainer" type="VBoxContainer" parent="HUD/Content/TheoryFeedSection"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Comment0" type="Label" parent="HUD/Content/TheoryFeedSection/FeedContainer"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 11
+
+[node name="Comment1" type="Label" parent="HUD/Content/TheoryFeedSection/FeedContainer"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 11
+
+[node name="Comment2" type="Label" parent="HUD/Content/TheoryFeedSection/FeedContainer"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 11
+
+[node name="PersonalBestLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "Personal Best: 0 / 100"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 13
+
+[node name="XPLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = "+0 XP"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 13
+
+[node name="BoostButton" type="Button" parent="HUD/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "▶  BOOST XP — Watch Ad  (+50%)"
+visible = false
+
+[node name="UnlockLabel" type="Label" parent="HUD/Content"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 12
+visible = false
+
+[node name="NavRow" type="HBoxContainer" parent="HUD/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HomeButton" type="Button" parent="HUD/Content/NavRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 46)
+text = "HOME"
+
+[node name="RetryButton" type="Button" parent="HUD/Content/NavRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 46)
+text = "TRY AGAIN"
+
+[node name="ActionRow" type="HBoxContainer" parent="HUD/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ShareButton" type="Button" parent="HUD/Content/ActionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 40)
+text = "SHARE"
+
+[node name="GalleryButton" type="Button" parent="HUD/Content/ActionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 40)
+text = "GALLERY"

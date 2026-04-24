@@ -1,0 +1,44 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/game_specific/gallery/gallery.gd" id="1_gallery"]
+
+[node name="Gallery" type="Node2D"]
+script = ExtResource("1_gallery")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Layout" type="VBoxContainer" parent="HUD"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 350.0
+offset_bottom = 630.0
+
+[node name="Header" type="Label" parent="HUD/Layout"]
+layout_mode = 2
+text = "PHOTO GALLERY"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 20
+
+[node name="CountLabel" type="Label" parent="HUD/Layout"]
+layout_mode = 2
+text = "0 photos"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+modulate = Color(0.7, 0.7, 0.7, 1)
+
+[node name="ScrollBox" type="ScrollContainer" parent="HUD/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GalleryGrid" type="GridContainer" parent="HUD/Layout/ScrollBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 3
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+
+[node name="BackButton" type="Button" parent="HUD/Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "← MAIN MENU"

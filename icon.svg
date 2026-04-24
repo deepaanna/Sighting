@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="16" fill="#0d1a0d"/>
+  <!-- Hex grid suggestion -->
+  <polygon points="64,20 82,30 82,50 64,60 46,50 46,30" fill="none" stroke="#3a7a3a" stroke-width="2"/>
+  <polygon points="64,60 82,70 82,90 64,100 46,90 46,70" fill="none" stroke="#3a7a3a" stroke-width="2"/>
+  <polygon points="28,40 46,50 46,70 28,80 10,70 10,50" fill="none" stroke="#2a5a2a" stroke-width="2"/>
+  <polygon points="100,40 118,50 118,70 100,80 82,70 82,50" fill="none" stroke="#2a5a2a" stroke-width="2"/>
+  <!-- Camera icon -->
+  <circle cx="64" cy="60" r="14" fill="none" stroke="#e8c820" stroke-width="2.5"/>
+  <circle cx="64" cy="60" r="6" fill="#e8c820"/>
+  <!-- Researcher dot -->
+  <circle cx="64" cy="60" r="3" fill="#0d1a0d"/>
+</svg>
