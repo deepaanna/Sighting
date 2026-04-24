@@ -340,6 +340,7 @@ func _try_step() -> void:
 
 
 func _on_step_complete(_cell: Vector2i) -> void:
+	_spawn_step_dust(_researcher.position)
 	_prox_sys.on_researcher_stepped(proximity)
 	if _pending_target != Vector2i(-1, -1) and _pending_target != _researcher.get_cell():
 		_try_step()
@@ -766,6 +767,28 @@ func _draw_proximity_aura(center: Vector2, prox: float) -> void:
 # =====================================================================
 # HELPERS
 # =====================================================================
+
+func _spawn_step_dust(world_pos: Vector2) -> void:
+	var p                       := CPUParticles2D.new()
+	p.position                   = world_pos
+	p.amount                     = 7
+	p.lifetime                   = 0.55
+	p.one_shot                   = true
+	p.explosiveness              = 0.95
+	p.emission_shape             = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius     = 3.5
+	p.direction                  = Vector2(0.0, -1.0)
+	p.spread                     = 55.0
+	p.gravity                    = Vector2(0.0, 95.0)
+	p.initial_velocity_min       = 20.0
+	p.initial_velocity_max       = 42.0
+	p.scale_amount_min           = 1.5
+	p.scale_amount_max           = 3.5
+	p.color                      = Color(0.58, 0.44, 0.22, 0.72)
+	add_child(p)
+	p.emitting = true
+	get_tree().create_timer(1.2).timeout.connect(p.queue_free)
+
 
 func _shifted(vt: PackedVector2Array, center: Vector2) -> PackedVector2Array:
 	var out := PackedVector2Array()

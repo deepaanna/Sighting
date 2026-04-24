@@ -205,13 +205,13 @@ func _on_boost_pressed() -> void:
 func _apply_boost() -> void:
 	_boost_btn.visible = false
 
-	var bonus_xp  : int = max(1, _xp_earned / 2 as int)   # +50% of run XP
+	var bonus_xp  : int = max(1, _xp_earned / 2)   # +50% of run XP, integer division
 	var total_xp  : int = Codex.get_value("sighting", "total_xp", 0)
 	Codex.set_value("sighting", "total_xp", total_xp + bonus_xp)
 	var global_xp : int = Codex.get_value("codex", "total_evidence_collected", 0)
 	Codex.set_value("codex", "total_evidence_collected", global_xp + bonus_xp)
 
-	var rep_bonus : int = max(0, TheoryFeed.REP_DELTA[_grade_idx] / 2 as int)
+	var rep_bonus : int = max(0, TheoryFeed.REP_DELTA[_grade_idx] / 2)
 	var rep       : int = Codex.get_value("sighting", "feed_reputation", 0)
 	Codex.set_value("sighting", "feed_reputation", max(0, rep + rep_bonus))
 	var g_rep     : int = Codex.get_value("codex", "theory_feed_reputation", 0)
@@ -250,6 +250,62 @@ func _animate_grade_reveal() -> void:
 	pulse.set_parallel(true)
 	pulse.tween_property(_grade_label, "scale",      Vector2(1.0, 1.0), 0.45)
 	pulse.tween_property(_grade_label, "modulate:a", 1.0,               0.25)
+	if _grade_idx <= 1:   # S or A grade
+		pulse.chain().tween_callback(_spawn_grade_particles)
+
+
+func _spawn_grade_particles() -> void:
+	var center := Vector2(180.0, 155.0)   # grade label center in screen space
+
+	var p                       := CPUParticles2D.new()
+	p.position                   = center
+	p.amount                     = 18 if _grade_idx == 0 else 10
+	p.lifetime                   = 1.4
+	p.one_shot                   = true
+	p.explosiveness              = 0.92
+	p.emission_shape             = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius     = 10.0
+	p.spread                     = 180.0
+	p.gravity                    = Vector2(0.0, 40.0)
+	p.initial_velocity_min       = 55.0
+	p.initial_velocity_max       = 130.0
+	p.scale_amount_min           = 2.5
+	p.scale_amount_max           = 5.0
+	p.color                      = _grade_color
+	$HUD.add_child(p)
+	p.emitting = true
+	get_tree().create_timer(2.5).timeout.connect(p.queue_free)
+
+	if _grade_idx == 0:
+		_spawn_confetti()
+
+
+func _spawn_confetti() -> void:
+	var colors: Array[Color] = [
+		Color(1.00, 0.85, 0.10),
+		Color(0.30, 0.90, 0.30),
+		Color(0.40, 0.70, 1.00),
+	]
+	for i: int in 3:
+		var p                       := CPUParticles2D.new()
+		p.position                   = Vector2(60.0 + float(i) * 120.0, 0.0)
+		p.amount                     = 18
+		p.lifetime                   = 2.8
+		p.one_shot                   = true
+		p.explosiveness              = 0.65
+		p.direction                  = Vector2(0.0, 1.0)
+		p.spread                     = 38.0
+		p.gravity                    = Vector2(0.0, 140.0)
+		p.initial_velocity_min       = 90.0
+		p.initial_velocity_max       = 200.0
+		p.angular_velocity_min       = -180.0
+		p.angular_velocity_max       = 180.0
+		p.scale_amount_min           = 3.0
+		p.scale_amount_max           = 6.0
+		p.color                      = colors[i]
+		$HUD.add_child(p)
+		p.emitting = true
+		get_tree().create_timer(4.0).timeout.connect(p.queue_free)
 
 
 func _grade_idx_for(score: int) -> int:

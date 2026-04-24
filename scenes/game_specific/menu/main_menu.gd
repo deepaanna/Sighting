@@ -154,46 +154,102 @@ func _show_feed_popup() -> void:
 	var rep        : int = Codex.get_value("sighting", "feed_reputation",        0)
 	var global_rep : int = Codex.get_value("codex",    "theory_feed_reputation", 0)
 	var photos     : int = Codex.get_value("sighting", "gallery_photos",         0)
+	var zones      : int = (Codex.get_value("sighting", "zones_unlocked", []) as Array).size()
 
-	var panel                 := PanelContainer.new()
-	panel.custom_minimum_size  = Vector2(300, 160)
-	panel.position             = Vector2(30, 200)
-	panel.z_index              = 20
-	$HUD.add_child(panel)
+	# Full-screen dim overlay — blocks all input to the menu behind it
+	var overlay              := ColorRect.new()
+	overlay.color             = Color(0.0, 0.0, 0.0, 0.78)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter      = Control.MOUSE_FILTER_STOP
+	overlay.z_index           = 40
+	$HUD.add_child(overlay)
+
+	# Centered modal card
+	var card                  := PanelContainer.new()
+	card.custom_minimum_size   = Vector2(280, 0)
+	card.position              = Vector2(40, 190)
+	card.z_index               = 41
+	var bg                    := StyleBoxFlat.new()
+	bg.bg_color                = Color(0.04, 0.09, 0.05, 0.98)
+	bg.set_border_width_all(2)
+	bg.border_color            = Color(0.22, 0.62, 0.28, 0.85)
+	bg.set_corner_radius_all(6)
+	bg.content_margin_left     = 20.0
+	bg.content_margin_right    = 20.0
+	bg.content_margin_top      = 18.0
+	bg.content_margin_bottom   = 18.0
+	card.add_theme_stylebox_override("panel", bg)
+	$HUD.add_child(card)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
-	panel.add_child(vbox)
+	vbox.add_theme_constant_override("separation", 10)
+	card.add_child(vbox)
 
-	var header                 := Label.new()
-	header.text                 = "── THEORY FEED STATS ──"
-	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(header)
+	# Dismiss callback — frees both overlay and card
+	var dismiss := func():
+		overlay.queue_free()
+		card.queue_free()
 
-	var rep_lbl                 := Label.new()
-	rep_lbl.text                 = "Sighting Rep: %d pts" % rep
-	rep_lbl.modulate             = Color(0.30, 0.90, 0.30)
-	rep_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(rep_lbl)
+	# Tap the dim overlay to close
+	overlay.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed:
+			dismiss.call()
+	)
 
-	var g_rep_lbl                 := Label.new()
-	g_rep_lbl.text                 = "Codex Rep: %d pts" % global_rep
-	g_rep_lbl.modulate             = Color(0.60, 0.75, 0.60)
-	g_rep_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(g_rep_lbl)
+	# Header
+	var title                  := Label.new()
+	title.text                  = "THEORY FEED"
+	title.horizontal_alignment  = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 17)
+	title.modulate              = Color(0.30, 0.90, 0.30)
+	vbox.add_child(title)
 
-	var photo_lbl                 := Label.new()
-	photo_lbl.text                 = "Photos taken: %d" % photos
-	photo_lbl.modulate             = Color(0.70, 0.70, 0.70)
-	photo_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(photo_lbl)
+	vbox.add_child(_modal_divider())
 
-	var close_btn := Button.new()
-	close_btn.text = "Close"
+	# Stat rows
+	_add_stat_row(vbox, "Sighting Rep",  "%d pts" % rep,        Color(0.30, 0.90, 0.30))
+	_add_stat_row(vbox, "Codex Rep",     "%d pts" % global_rep, Color(0.55, 0.80, 0.60))
+	_add_stat_row(vbox, "Photos taken",  str(photos),           Color(0.72, 0.72, 0.72))
+	_add_stat_row(vbox, "Zones found",   "%d / 4" % zones,      Color(0.72, 0.72, 0.72))
+
+	vbox.add_child(_modal_divider())
+
+	# Close button
+	var close_btn                   := Button.new()
+	close_btn.text                   = "CLOSE"
+	close_btn.custom_minimum_size    = Vector2(0, 42)
 	UIStyler.style_button(close_btn, UIStyler.ACCENT_MUTED)
-	close_btn.pressed.connect(panel.queue_free)
+	close_btn.pressed.connect(dismiss)
 	vbox.add_child(close_btn)
+
+
+func _add_stat_row(parent: VBoxContainer, label: String, value: String, val_color: Color) -> void:
+	var row := HBoxContainer.new()
+	parent.add_child(row)
+
+	var lbl                    := Label.new()
+	lbl.text                    = label
+	lbl.size_flags_horizontal   = Control.SIZE_EXPAND_FILL
+	lbl.add_theme_font_size_override("font_size", 13)
+	lbl.modulate                = Color(0.62, 0.62, 0.62)
+	row.add_child(lbl)
+
+	var val                    := Label.new()
+	val.text                    = value
+	val.horizontal_alignment    = HORIZONTAL_ALIGNMENT_RIGHT
+	val.add_theme_font_size_override("font_size", 13)
+	val.modulate                = val_color
+	row.add_child(val)
+
+
+func _modal_divider() -> HSeparator:
+	var sep              := HSeparator.new()
+	var style            := StyleBoxFlat.new()
+	style.bg_color        = Color(0.22, 0.42, 0.24, 0.55)
+	style.content_margin_top    = 1.0
+	style.content_margin_bottom = 1.0
+	sep.add_theme_stylebox_override("separator", style)
+	return sep
 
 
 # =====================================================================
