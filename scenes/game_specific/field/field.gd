@@ -208,7 +208,8 @@ func _generate_terrain() -> void:
 	match zone:
 		"appalachian", "pine_barrens": _gen_appalachian(rng)
 		"desert_sw":                   _gen_desert_sw(rng)
-		"scottish_loch", "everglades": _gen_scottish_loch(rng)
+		"scottish_loch":               _gen_scottish_loch(rng)
+		"everglades":                  _gen_everglades(rng)
 		_:                             _gen_pacific_nw(rng)
 
 
@@ -302,6 +303,32 @@ func _gen_scottish_loch(rng: RandomNumberGenerator) -> void:
 				_blocked[cell] = true
 			else:
 				_terrain[cell] = Terrain.SWAMP if rng.randf() < 0.28 else Terrain.GRASS
+	_blocked.erase(Vector2i(3, 3))
+	_fix_connectivity()
+
+
+func _gen_everglades(rng: RandomNumberGenerator) -> void:
+	# Swamp floor with scattered water pools — not a single lake
+	for row in HexGrid.ROWS:
+		for col in HexGrid.COLS:
+			var cell := Vector2i(col, row)
+			var r    := rng.randi_range(0, 9)
+			if r < 6:    _terrain[cell] = Terrain.SWAMP
+			elif r < 8:  _terrain[cell] = Terrain.GRASS
+			else:        _terrain[cell] = Terrain.ROCK
+	# Scatter 3 small water pools (2–4 cells each)
+	for _i in 3:
+		var seed := Vector2i(rng.randi_range(0, HexGrid.COLS - 1),
+		                     rng.randi_range(0, HexGrid.ROWS - 1))
+		if HexGrid.hex_distance(seed, Vector2i(3, 3)) < 2:
+			continue
+		_terrain[seed] = Terrain.WATER
+		_blocked[seed] = true
+		for nb in HexGrid.offset_neighbors(seed):
+			if HexGrid.is_in_bounds(nb) and nb != Vector2i(3, 3) \
+					and rng.randf() < 0.45:
+				_terrain[nb] = Terrain.WATER
+				_blocked[nb] = true
 	_blocked.erase(Vector2i(3, 3))
 	_fix_connectivity()
 

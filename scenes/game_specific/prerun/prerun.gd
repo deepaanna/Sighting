@@ -105,8 +105,7 @@ func _draw() -> void:
 
 	if not _sil_sprite:
 		var ctype: String = _daily.get("cryptid_type", "bigfoot") as String
-		_draw_unknown(center, pulse) if ctype not in ["bigfoot","mothman","chupacabra","nessie"] \
-			else _draw_procedural(ctype, center, pulse)
+		_draw_procedural(ctype, center, pulse)
 
 	_draw_vignette(vp)
 	_draw_divider(vp)
@@ -114,10 +113,15 @@ func _draw() -> void:
 
 func _draw_procedural(ctype: String, center: Vector2, pulse: float) -> void:
 	match ctype:
-		"bigfoot":    _draw_bigfoot(center, pulse)
-		"mothman":    _draw_mothman(center, pulse)
-		"chupacabra": _draw_chupacabra(center, pulse)
-		"nessie":     _draw_nessie(center, pulse)
+		"bigfoot":       _draw_bigfoot(center, pulse)
+		"mothman":       _draw_mothman(center, pulse)
+		"chupacabra":    _draw_chupacabra(center, pulse)
+		"nessie":        _draw_nessie(center, pulse)
+		"jersey_devil":  _draw_jersey_devil_sil(center, pulse)
+		"skunk_ape":     _draw_skunk_ape_sil(center, pulse)
+		"champ":         _draw_champ_sil(center, pulse)
+		"mokele_mbembe": _draw_mokele_mbembe_sil(center, pulse)
+		_:               _draw_unknown(center, pulse)
 
 
 func _draw_glow_rings(center: Vector2, pulse: float) -> void:
@@ -203,6 +207,85 @@ func _draw_nessie(center: Vector2, pulse: float) -> void:
 	)
 
 
+func _draw_jersey_devil_sil(center: Vector2, pulse: float) -> void:
+	var c  := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
+	var ww := 56.0 + pulse * 8.0
+	draw_colored_polygon(PackedVector2Array([
+		center + Vector2(-6, -8),
+		center + Vector2(-ww, -52),
+		center + Vector2(-ww + 20, 14),
+		center + Vector2(-10, 20),
+	]), c)
+	draw_colored_polygon(PackedVector2Array([
+		center + Vector2( 6, -8),
+		center + Vector2( ww, -52),
+		center + Vector2( ww - 20, 14),
+		center + Vector2( 10, 20),
+	]), c)
+	draw_rect(Rect2(center + Vector2(-5, -12), Vector2(10, 38)), c)
+	draw_circle(center + Vector2(0, -22), 10, c)
+	draw_line(center + Vector2(-4, -31), center + Vector2(-9, -44), c, 2.5)
+	draw_line(center + Vector2( 4, -31), center + Vector2( 9, -44), c, 2.5)
+	var eye_a := 0.7 + pulse * 0.25
+	draw_circle(center + Vector2(5, -22), 4, Color(0.95, 0.08, 0.04, eye_a))
+	draw_line(center + Vector2(0, 24), center + Vector2(10, 36), c, 2.0)
+	draw_line(center + Vector2(10, 36), center + Vector2(6, 44), c, 1.5)
+
+
+func _draw_skunk_ape_sil(center: Vector2, pulse: float) -> void:
+	var c    := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
+	var hang := 38.0 + pulse * 4.0
+	draw_rect(Rect2(center + Vector2(-18, 32), Vector2(14, 8)), c)
+	draw_rect(Rect2(center + Vector2(  4, 32), Vector2(14, 8)), c)
+	draw_rect(Rect2(center + Vector2(-15, 10), Vector2(11, 24)), c)
+	draw_rect(Rect2(center + Vector2(  4, 10), Vector2(11, 24)), c)
+	draw_circle(center + Vector2(2, 0), 28, c)
+	draw_rect(Rect2(center + Vector2(-44, -16), Vector2(14, hang)), c)
+	draw_rect(Rect2(center + Vector2( 30, -16), Vector2(14, hang)), c)
+	draw_circle(center + Vector2(10, -30), 15, c)
+	draw_rect(Rect2(center + Vector2(20, -28), Vector2(18, 8)), c)
+	var eye_a := 0.7 + pulse * 0.25
+	draw_circle(center + Vector2( 8, -33), 4, Color(0.55, 0.85, 0.12, eye_a))
+	draw_circle(center + Vector2(18, -31), 4, Color(0.55, 0.85, 0.12, eye_a))
+
+
+func _draw_champ_sil(center: Vector2, pulse: float) -> void:
+	var c     := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
+	var bob_y : float = sin(_pulse_t * 0.9) * 4.0
+	var off   := Vector2(0, bob_y)
+	draw_circle(center + off + Vector2(-14, -30), 9, c)
+	draw_colored_polygon(PackedVector2Array([
+		center + off + Vector2(-20, -24),
+		center + off + Vector2( -8, -24),
+		center + off + Vector2(  4,  -6),
+		center + off + Vector2( -8,  -6),
+	]), c)
+	draw_circle(center + off + Vector2(6, 6), 22, c)
+	draw_circle(center + off + Vector2(38, 9), 13, c)
+	var wa := 0.28 + pulse * 0.16
+	draw_line(center + Vector2(-60, 26 + bob_y), center + Vector2(60, 26 + bob_y),
+		Color(0.25, 0.55, 0.90, wa), 2.0)
+
+
+func _draw_mokele_mbembe_sil(center: Vector2, pulse: float) -> void:
+	var c := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
+	draw_circle(center + Vector2(10, 12), 30, c)
+	draw_colored_polygon(PackedVector2Array([
+		center + Vector2(-6, -4),
+		center + Vector2( 6, -4),
+		center + Vector2( 4, -42),
+		center + Vector2(-8, -40),
+	]), c)
+	draw_circle(center + Vector2(-3, -44), 10, c)
+	draw_rect(Rect2(center + Vector2(-20, 34), Vector2(12, 18)), c)
+	draw_rect(Rect2(center + Vector2( -4, 36), Vector2(12, 16)), c)
+	draw_rect(Rect2(center + Vector2( 14, 34), Vector2(12, 18)), c)
+	draw_rect(Rect2(center + Vector2( 30, 32), Vector2(12, 16)), c)
+	draw_line(center + Vector2(36, 10), center + Vector2(54, 18), c, 5.0)
+	draw_line(center + Vector2(54, 18), center + Vector2(62, 14), c, 3.5)
+	draw_line(center + Vector2(62, 14), center + Vector2(68, 20), c, 2.0)
+
+
 func _draw_unknown(center: Vector2, pulse: float) -> void:
 	var c := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.5 + pulse * 0.3)
 	draw_circle(center, 38, c)
@@ -264,8 +347,12 @@ static func _distance_hint(sweet_spot: int) -> String:
 
 static func _type_color(ctype: String) -> Color:
 	match ctype:
-		"bigfoot":    return Color(0.45, 0.80, 0.35)
-		"mothman":    return Color(0.70, 0.40, 0.95)
-		"chupacabra": return Color(0.95, 0.38, 0.28)
-		"nessie":     return Color(0.28, 0.68, 0.95)
-		_:            return Color(0.82, 0.82, 0.82)
+		"bigfoot":       return Color(0.45, 0.80, 0.35)
+		"mothman":       return Color(0.70, 0.40, 0.95)
+		"chupacabra":    return Color(0.95, 0.38, 0.28)
+		"nessie":        return Color(0.28, 0.68, 0.95)
+		"jersey_devil":  return Color(0.60, 0.20, 0.90)
+		"skunk_ape":     return Color(0.30, 0.65, 0.20)
+		"champ":         return Color(0.30, 0.55, 0.85)
+		"mokele_mbembe": return Color(0.40, 0.60, 0.20)
+		_:               return Color(0.82, 0.82, 0.82)

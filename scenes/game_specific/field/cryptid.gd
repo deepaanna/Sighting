@@ -41,12 +41,14 @@ func _draw() -> void:
 	if not _revealed:
 		return
 	match _ctype:
-		"nessie":        _draw_nessie()
-		"mothman":       _draw_mothman()
-		"chupacabra":    _draw_chupacabra()
-		"jersey_devil":  _draw_jersey_devil()
-		"skunk_ape":     _draw_skunk_ape()
-		_:               _draw_bigfoot()
+		"nessie":          _draw_nessie()
+		"mothman":         _draw_mothman()
+		"chupacabra":      _draw_chupacabra()
+		"jersey_devil":    _draw_jersey_devil()
+		"skunk_ape":       _draw_skunk_ape()
+		"champ":           _draw_champ()
+		"mokele_mbembe":   _draw_mokele_mbembe()
+		_:                 _draw_bigfoot()
 
 
 # ── Bigfoot ───────────────────────────────────────────────────────────────
@@ -185,6 +187,50 @@ func _draw_skunk_ape() -> void:
 	_blob(Vector2(9, -11), 4, 2, snout)
 	draw_circle(Vector2(1, -16), 1.8, eye)
 	draw_circle(Vector2(6, -15), 1.8, eye)
+
+
+# ── Champ ─────────────────────────────────────────────────────────────────
+
+func _draw_champ() -> void:
+	var body  := Color(0.18, 0.28, 0.44)
+	var water := Color(0.10, 0.20, 0.44, 0.52)
+	var eye   := Color(0.85, 0.68, 0.08)
+	# Two humps (fewer than Nessie, more serpentine)
+	_blob(Vector2(-9, 1), 7, 5, body)
+	_blob(Vector2( 4,-4), 9, 6, body)
+	# Neck
+	var neck := PackedVector2Array([
+		Vector2(5, -6), Vector2(9, -6), Vector2(11, -19), Vector2(7, -20)
+	])
+	draw_colored_polygon(neck, body)
+	_blob(Vector2(8, -22), 4, 3, body)
+	draw_circle(Vector2(11, -23), 1.4, eye)
+	draw_line(Vector2(-17, 8), Vector2(17, 8), water, 2.5)
+
+
+# ── Mokele-mbembe ──────────────────────────────────────────────────────────
+
+func _draw_mokele_mbembe() -> void:
+	var hide := Color(0.20, 0.26, 0.10)
+	var eye  := Color(0.82, 0.58, 0.08)
+	# Large body
+	_blob(Vector2(3, 5), 13, 9, hide)
+	# Neck
+	var neck := PackedVector2Array([
+		Vector2(-2, -3), Vector2(3, -3), Vector2(4, -18), Vector2(0, -18)
+	])
+	draw_colored_polygon(neck, hide)
+	_blob(Vector2(1, -21), 5, 3, hide)
+	draw_circle(Vector2(4, -21), 1.2, eye)
+	# Four leg stubs
+	_blob(Vector2(-7, 12), 4, 3, hide)
+	_blob(Vector2(-1, 14), 4, 3, hide)
+	_blob(Vector2( 7, 12), 4, 3, hide)
+	_blob(Vector2(14, 11), 4, 3, hide)
+	# Tail
+	draw_line(Vector2(13, 5), Vector2(21, 8), hide, 3.5)
+	draw_line(Vector2(21, 8), Vector2(25, 6), hide, 2.5)
+	draw_line(Vector2(25, 6), Vector2(28, 9), hide, 1.5)
 
 
 # ── Shared ────────────────────────────────────────────────────────────────

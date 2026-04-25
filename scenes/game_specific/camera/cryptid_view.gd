@@ -17,12 +17,14 @@ func setup(distance: int) -> void:
 
 func _draw() -> void:
 	match _ctype:
-		"nessie":       _draw_nessie()
-		"mothman":      _draw_mothman()
-		"chupacabra":   _draw_chupacabra()
-		"jersey_devil": _draw_jersey_devil()
-		"skunk_ape":    _draw_skunk_ape()
-		_:              _draw_bigfoot()
+		"nessie":          _draw_nessie()
+		"mothman":         _draw_mothman()
+		"chupacabra":      _draw_chupacabra()
+		"jersey_devil":    _draw_jersey_devil()
+		"skunk_ape":       _draw_skunk_ape()
+		"champ":           _draw_champ()
+		"mokele_mbembe":   _draw_mokele_mbembe()
+		_:                 _draw_bigfoot()
 
 
 # ── Bigfoot ───────────────────────────────────────────────────────────────
@@ -171,6 +173,53 @@ func _draw_skunk_ape() -> void:
 	_blob(Vector2(13, -14), 6, 3, snout)
 	draw_circle(Vector2(2, -21), 2.2, eye)
 	draw_circle(Vector2(8, -20), 2.2, eye)
+
+
+# ── Champ ─────────────────────────────────────────────────────────────────
+
+func _draw_champ() -> void:
+	var body  := Color(0.20, 0.32, 0.52)
+	var water := Color(0.12, 0.24, 0.50, 0.62)
+	var eye   := Color(0.88, 0.72, 0.10)
+	# Two humps
+	_blob(Vector2(-12,  1), 10,  7, body)
+	_blob(Vector2(  5, -5), 13, 10, body)
+	# Neck
+	var neck := PackedVector2Array([
+		Vector2( 7, -8), Vector2(13, -8),
+		Vector2(16, -25), Vector2(10, -26),
+	])
+	draw_colored_polygon(neck, body)
+	_blob(Vector2(11, -28), 6, 4, body)
+	draw_circle(Vector2(15, -29), 1.8, eye)
+	draw_line(Vector2(-24, 12), Vector2(24, 12), water, 3.0)
+	draw_line(Vector2(-24, 16), Vector2(24, 16), water, 2.0)
+
+
+# ── Mokele-mbembe ──────────────────────────────────────────────────────────
+
+func _draw_mokele_mbembe() -> void:
+	var hide := Color(0.22, 0.28, 0.12)
+	var eye  := Color(0.85, 0.62, 0.08)
+	# Large body
+	_blob(Vector2(4, 6), 17, 13, hide)
+	# Neck
+	var neck := PackedVector2Array([
+		Vector2(-3, -4), Vector2(4, -4),
+		Vector2(6, -26), Vector2(-1, -26),
+	])
+	draw_colored_polygon(neck, hide)
+	_blob(Vector2(2, -28), 7, 4, hide)
+	draw_circle(Vector2(5, -29), 1.6, eye)
+	# Four leg stubs
+	_blob(Vector2(-10, 15), 5, 4, hide)
+	_blob(Vector2( -1, 17), 5, 4, hide)
+	_blob(Vector2(  9, 15), 5, 4, hide)
+	_blob(Vector2( 18, 13), 5, 4, hide)
+	# Tail
+	draw_line(Vector2(18,  6), Vector2(28, 11), hide, 4.5)
+	draw_line(Vector2(28, 11), Vector2(34,  8), hide, 3.0)
+	draw_line(Vector2(34,  8), Vector2(38, 12), hide, 2.0)
 
 
 # ── Shared ────────────────────────────────────────────────────────────────

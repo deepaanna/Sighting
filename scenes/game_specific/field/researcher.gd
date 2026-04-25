@@ -50,3 +50,5 @@ func _tex_for_dir(delta: Vector2) -> Texture2D:
 
 func _draw() -> void:
 	draw_circle(Vector2(1.0, 2.0), 9.0, Color(0.0, 0.0, 0.0, 0.22))
+	if _sprite and not _sprite.texture:
+		draw_circle(Vector2(0, 0), 8.0, Color(0.95, 0.85, 0.10))
