@@ -10,7 +10,7 @@ signal started_lurking(cell: Vector2i)
 signal entered_camera_range
 signal exited_camera_range
 
-const STEP_INTERVAL  := 1.5   # base seconds between wander steps
+const STEP_INTERVAL  := 1.5   # base seconds between wander steps (Desert SW uses ÷1.8)
 const LURK_CHANCE    := 0.18  # per-step probability of pausing to lurk
 const LURK_DURATION  := 2.0   # seconds spent lurking before resuming
 const NOISE_CHANCE   := 0.28  # probability of random neighbor instead of A* next-step
@@ -25,12 +25,13 @@ var _blocked: Dictionary       # shared ref from FieldPhase — not owned here
 var _rng: RandomNumberGenerator
 var _astar: AStar2D
 
-var _step_timer      := STEP_INTERVAL   # start delayed so no frame-1 step
+var _step_timer      := STEP_INTERVAL
+var _step_interval   := STEP_INTERVAL  # scaled by speed_mult in setup()
 var _lurking         := false
 var _lurk_timer      := 0.0
 var _in_camera_range := false
 var _initialized     := false
-var _startup_grace   := 3.0            # suppress camera-range signals for first 3 s
+var _startup_grace   := 3.0
 
 
 # =====================================================================
@@ -41,12 +42,15 @@ func setup(
 	start_cell: Vector2i,
 	researcher_start: Vector2i,
 	blocked: Dictionary,
-	rng: RandomNumberGenerator
+	rng: RandomNumberGenerator,
+	speed_mult: float = 1.0
 ) -> void:
 	_cell            = start_cell
 	_researcher_cell = researcher_start
 	_blocked         = blocked
 	_rng             = rng
+	_step_interval   = STEP_INTERVAL / maxf(speed_mult, 0.1)
+	_step_timer      = _step_interval
 	_build_astar()
 	_pick_wander_target()
 	_initialized     = true
@@ -91,7 +95,7 @@ func _process(delta: float) -> void:
 
 	_step_timer -= delta
 	if _step_timer <= 0.0:
-		_step_timer = STEP_INTERVAL + _rng.randf_range(-0.25, 0.35)
+		_step_timer = _step_interval + _rng.randf_range(-0.25, 0.35)
 		_wander_step()
 
 

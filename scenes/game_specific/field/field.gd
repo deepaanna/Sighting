@@ -8,14 +8,18 @@ extends Node2D
 
 signal photo_phase_triggered(researcher_cell: Vector2i)
 
-enum Terrain { GRASS, FOREST, SWAMP, ROCK }
+enum Terrain { GRASS, FOREST, SWAMP, ROCK, WATER }
 
 const TERRAIN_COLORS: Dictionary = {
 	Terrain.GRASS:  Color(0.22, 0.48, 0.22),
 	Terrain.FOREST: Color(0.12, 0.32, 0.12),
 	Terrain.SWAMP:  Color(0.22, 0.35, 0.18),
 	Terrain.ROCK:   Color(0.38, 0.35, 0.30),
+	Terrain.WATER:  Color(0.14, 0.30, 0.62),
 }
+# Zone-specific grass overrides
+const SAND_COLOR       := Color(0.68, 0.58, 0.30)   # Desert SW / Pine Barrens
+const PINEBARREN_GRASS := Color(0.52, 0.50, 0.26)   # Pine Barrens sandy loam
 const OUTLINE_COLOR    := Color(0.0, 0.0, 0.0, 0.55)
 const HOVER_COLOR      := Color(1.0, 1.0, 1.0, 0.18)
 const FOOTPRINT_COLOR  := Color(0.55, 0.38, 0.18)
@@ -62,6 +66,9 @@ var _rng: RandomNumberGenerator
 var _daily:       Dictionary = {}
 var _sweet_spot:  int        = 3
 
+# --- Dimensional rifts (TIER 3-H — FLAT OUT cross-game effect) ---
+var _rift_cells: Array = []   # Vector2i cells showing rift overlay
+
 # --- Photo phase guard ---
 var _photo_triggered: bool = false
 
@@ -87,6 +94,10 @@ func _ready() -> void:
 	_rng      = RandomNumberGenerator.new()
 	_rng.seed = Codex.get_daily_seed() ^ 0xC0DEC0DE
 
+	# _daily must be set before _generate_terrain() so zone-aware generation works
+	_daily      = DailyCryptid.get_today()
+	_sweet_spot = _daily.get("sweet_spot", 3)
+
 	_compute_grid_offset()
 	_generate_terrain()
 	_build_astar_and_setup_ai()
@@ -102,8 +113,6 @@ func _ready() -> void:
 	_prox_sys.level_changed.connect(_on_proximity_level_changed)
 	UIStyler.style_progress_bar(_prox_bar)
 
-	_daily            = DailyCryptid.get_today()
-	_sweet_spot       = _daily.get("sweet_spot", 3)
 	_cryptid.setup(_daily.get("cryptid_type", "bigfoot") as String)
 	_zone_label.text  = _daily.get("zone_display", "UNKNOWN")
 	_hint_label.text  = ""
@@ -112,6 +121,7 @@ func _ready() -> void:
 	SightingCodex.on_game_start()
 	_check_feed_ban()
 	_update_daily_streak()
+	_check_dimensional_rifts()
 	AudioManager.play_music("field_%s" % _daily.get("zone", "pacific_nw"))
 	if not Codex.get_value("sighting", "tutorial_shown", false):
 		Codex.set_value("sighting", "tutorial_shown", true)
@@ -192,21 +202,164 @@ func _compute_grid_offset() -> void:
 
 
 func _generate_terrain() -> void:
-	var terrain_rng       := RandomNumberGenerator.new()
-	terrain_rng.seed      = Codex.get_daily_seed()
+	var rng      := RandomNumberGenerator.new()
+	rng.seed      = Codex.get_daily_seed()
+	var zone     := _daily.get("zone", "pacific_nw") as String
+	match zone:
+		"appalachian", "pine_barrens": _gen_appalachian(rng)
+		"desert_sw":                   _gen_desert_sw(rng)
+		"scottish_loch", "everglades": _gen_scottish_loch(rng)
+		_:                             _gen_pacific_nw(rng)
+
+
+# ── Zone terrain generators ───────────────────────────────────────────
+
+func _gen_pacific_nw(rng: RandomNumberGenerator) -> void:
+	# 20% grass, 60% forest (some blocking), 15% swamp, 5% rock
 	for row in HexGrid.ROWS:
 		for col in HexGrid.COLS:
 			var cell := Vector2i(col, row)
-			var r    := terrain_rng.randi_range(0, 9)
-			if r < 5:
+			var r    := rng.randi_range(0, 19)
+			if r < 4:
 				_terrain[cell] = Terrain.GRASS
-			elif r < 7:
+			elif r < 16:
 				_terrain[cell] = Terrain.FOREST
-			elif r < 9:
+				if rng.randf() < 0.22:   # dense thicket — impassable
+					_blocked[cell] = true
+			elif r < 19:
 				_terrain[cell] = Terrain.SWAMP
 			else:
 				_terrain[cell] = Terrain.ROCK
 				_blocked[cell] = true
+	_blocked.erase(Vector2i(3, 3))
+	_fix_connectivity()
+
+
+func _gen_appalachian(rng: RandomNumberGenerator) -> void:
+	# 40% grass, 20% forest, 10% swamp — then rock clusters seeded on top
+	for row in HexGrid.ROWS:
+		for col in HexGrid.COLS:
+			var cell := Vector2i(col, row)
+			var r    := rng.randi_range(0, 9)
+			if r < 4:       _terrain[cell] = Terrain.GRASS
+			elif r < 6:     _terrain[cell] = Terrain.FOREST
+			else:           _terrain[cell] = Terrain.SWAMP
+	# Seed 4 rock clusters; each spreads to ~35% of neighbours
+	for _i in 4:
+		var seed := Vector2i(rng.randi_range(0, HexGrid.COLS - 1),
+		                     rng.randi_range(0, HexGrid.ROWS - 1))
+		if seed == Vector2i(3, 3):
+			continue
+		_terrain[seed] = Terrain.ROCK
+		_blocked[seed] = true
+		for nb in HexGrid.offset_neighbors(seed):
+			if HexGrid.is_in_bounds(nb) and nb != Vector2i(3, 3) \
+					and rng.randf() < 0.38:
+				_terrain[nb] = Terrain.ROCK
+				_blocked[nb] = true
+	_blocked.erase(Vector2i(3, 3))
+	_fix_connectivity()
+
+
+func _gen_desert_sw(rng: RandomNumberGenerator) -> void:
+	# 90% open sand (GRASS rendered as sand), 10% rock — very few obstacles
+	for row in HexGrid.ROWS:
+		for col in HexGrid.COLS:
+			var cell := Vector2i(col, row)
+			if rng.randi_range(0, 9) == 9:
+				_terrain[cell] = Terrain.ROCK
+				_blocked[cell] = true
+			else:
+				_terrain[cell] = Terrain.GRASS
+	_blocked.erase(Vector2i(3, 3))
+
+
+func _gen_scottish_loch(rng: RandomNumberGenerator) -> void:
+	# Grow a connected water body (~14 cells) from the upper-right quadrant
+	var water: Dictionary = {}
+	var frontier: Array   = [Vector2i(4, 1), Vector2i(5, 2), Vector2i(4, 2)]
+	for seed in frontier:
+		water[seed] = true
+	var attempts := 0
+	while water.size() < 14 and attempts < 400:
+		attempts += 1
+		var idx := rng.randi_range(0, frontier.size() - 1)
+		var c: Vector2i = frontier[idx]
+		for nb in HexGrid.offset_neighbors(c):
+			if not HexGrid.is_in_bounds(nb) or water.has(nb):
+				continue
+			if HexGrid.hex_distance(nb, Vector2i(3, 3)) < 2:
+				continue   # protect researcher start
+			if rng.randf() < 0.50:
+				water[nb] = true
+				frontier.append(nb)
+
+	for row in HexGrid.ROWS:
+		for col in HexGrid.COLS:
+			var cell := Vector2i(col, row)
+			if water.has(cell):
+				_terrain[cell] = Terrain.WATER
+				_blocked[cell] = true
+			else:
+				_terrain[cell] = Terrain.SWAMP if rng.randf() < 0.28 else Terrain.GRASS
+	_blocked.erase(Vector2i(3, 3))
+	_fix_connectivity()
+
+
+# ── Connectivity guarantee ────────────────────────────────────────────
+
+func _fix_connectivity() -> void:
+	for _attempt in 20:
+		var reachable := _flood_fill(Vector2i(3, 3))
+		var repaired  := false
+		for row in HexGrid.ROWS:
+			for col in HexGrid.COLS:
+				var c := Vector2i(col, row)
+				if not _blocked.has(c) and not reachable.has(c):
+					_punch_corridor(c, reachable)
+					repaired = true
+					break
+			if repaired:
+				break
+		if not repaired:
+			return
+
+
+func _flood_fill(start: Vector2i) -> Dictionary:
+	var visited: Dictionary = {}
+	var queue: Array        = [start]
+	visited[start]           = true
+	while not queue.is_empty():
+		var cur: Vector2i = queue.pop_front()
+		for nb in HexGrid.offset_neighbors(cur):
+			if HexGrid.is_in_bounds(nb) and not _blocked.has(nb) \
+					and not visited.has(nb):
+				visited[nb] = true
+				queue.append(nb)
+	return visited
+
+
+func _punch_corridor(from: Vector2i, reachable: Dictionary) -> void:
+	# BFS through ALL cells (ignoring blocking) to find path to reachable region.
+	# Clears blocked cells along the shortest such path.
+	var parent: Dictionary = {from: from}
+	var queue: Array       = [from]
+	var found              := Vector2i(-1, -1)
+	while not queue.is_empty():
+		var cur: Vector2i = queue.pop_front()
+		if reachable.has(cur) and cur != from:
+			found = cur
+			break
+		for nb in HexGrid.offset_neighbors(cur):
+			if HexGrid.is_in_bounds(nb) and not parent.has(nb):
+				parent[nb] = cur
+				queue.append(nb)
+	if found == Vector2i(-1, -1):
+		return
+	var cur := found
+	while cur != from:
+		_blocked.erase(cur)
+		cur = parent[cur] as Vector2i
 
 
 func _build_astar_and_setup_ai() -> void:
@@ -232,7 +385,10 @@ func _build_astar_and_setup_ai() -> void:
 	var spawn := _pick_cryptid_spawn()
 	_cryptid.position = _cell_to_world(spawn)
 
-	_cryptid_ai.setup(spawn, Vector2i(3, 3), _blocked, _rng)
+	# Desert SW: chupacabra moves fast — short photo window
+	var zone      := _daily.get("zone", "pacific_nw") as String
+	var ai_speed  := 1.8 if zone == "desert_sw" else 1.0
+	_cryptid_ai.setup(spawn, Vector2i(3, 3), _blocked, _rng, ai_speed)
 
 
 func _pick_cryptid_spawn() -> Vector2i:
@@ -280,7 +436,10 @@ func _process(delta: float) -> void:
 
 	var weather := _daily.get("weather", "clear") as String
 	if weather == "rain":
-		queue_redraw()   # rain drops animate every frame
+		queue_redraw()
+	var zone := _daily.get("zone", "") as String
+	if zone in ["scottish_loch", "everglades"] or not _rift_cells.is_empty():
+		queue_redraw()   # water shimmer + rift pulse
 
 	# Tick down rustling hint
 	if _rustling_active:
@@ -459,12 +618,19 @@ func _on_entered_camera_range() -> void:
 
 func _launch_camera_phase() -> void:
 	var dist := HexGrid.hex_distance(_researcher.get_cell(), _cryptid_ai.get_cell())
+	# Rift bonus: +5 score if researcher is adjacent to a rift cell
+	var rift_bonus := 0
+	for rc: Vector2i in _rift_cells:
+		if HexGrid.hex_distance(_researcher.get_cell(), rc) <= 1:
+			rift_bonus = 5
+			break
 	CameraPhase.session = {
 		"cryptid_type": _daily.get("cryptid_type", "bigfoot"),
 		"hex_distance": dist,
 		"zone":         _daily.get("zone",          "pacific_nw"),
 		"weather":      _daily.get("weather",       "clear"),
 		"sweet_spot":   _daily.get("sweet_spot",    3),
+		"rift_bonus":   rift_bonus,
 	}
 	SceneManager.change_scene(
 		"res://scenes/game_specific/camera/camera_phase.tscn", 0.35
@@ -574,9 +740,21 @@ func _draw() -> void:
 		for col in HexGrid.COLS:
 			var cell   := Vector2i(col, row)
 			var center := HexGrid.cell_to_pixel(cell) + _grid_offset
-			var fill: Color = TERRAIN_COLORS.get(_terrain.get(cell, Terrain.GRASS), TERRAIN_COLORS[Terrain.GRASS])
+			var t_type: int = _terrain.get(cell, Terrain.GRASS)
+			var fill: Color = TERRAIN_COLORS.get(t_type, TERRAIN_COLORS[Terrain.GRASS])
+			# Zone-specific grass colour overrides
+			if t_type == Terrain.GRASS:
+				var zone := _daily.get("zone", "") as String
+				if zone == "desert_sw":
+					fill = SAND_COLOR
+				elif zone == "pine_barrens":
+					fill = PINEBARREN_GRASS
+			# Water: subtle animated shimmer
+			if t_type == Terrain.WATER:
+				var wave := 0.04 * sin(_elapsed * 1.4 + float(cell.x * 3 + cell.y) * 0.7)
+				fill = Color(fill.r, fill.g + wave, fill.b - wave * 0.5)
 
-			if _blocked.has(cell):
+			if _blocked.has(cell) and t_type != Terrain.WATER:
 				fill = fill.darkened(0.4)
 
 			var poly := _shifted(vt, center)
@@ -615,6 +793,7 @@ func _draw() -> void:
 
 	_draw_range_guide()
 	_draw_weather()
+	_draw_rift_cells()
 
 
 func _draw_range_guide() -> void:
@@ -806,3 +985,78 @@ func _id_to_cell(id: int) -> Vector2i:
 
 func _cell_to_world(cell: Vector2i) -> Vector2:
 	return HexGrid.cell_to_pixel(cell) + _grid_offset
+
+
+# =====================================================================
+# DIMENSIONAL RIFTS (TIER 3-H — FLAT OUT cross-game effect)
+# Every 10 edge-wraps in FLAT OUT adds one Rift to today's field.
+# Rift cells: passable, +5 score bonus if researcher is adjacent at
+# camera phase launch.  Max 3 rifts per session.
+# =====================================================================
+
+func _check_dimensional_rifts() -> void:
+	var wraps := Codex.get_flat_out_wraps()
+	if wraps < 10:
+		return
+	var count := mini(wraps / 10, 3)
+	_rift_cells = _pick_rift_cells(count)
+
+	var lbl                   := Label.new()
+	lbl.text                   = "DIMENSIONAL RIFT  ×%d  — FLAT OUT interference detected" % count
+	lbl.horizontal_alignment   = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.autowrap_mode          = TextServer.AUTOWRAP_WORD
+	lbl.position               = Vector2(0, 62)
+	lbl.size                   = Vector2(360, 36)
+	lbl.modulate               = Color(0.65, 0.28, 1.0)
+	lbl.z_index                = 20
+	$HUD.add_child(lbl)
+	var tw := create_tween()
+	tw.tween_interval(2.0)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.6)
+	tw.tween_callback(lbl.queue_free)
+
+
+func _pick_rift_cells(count: int) -> Array:
+	var rift_rng := RandomNumberGenerator.new()
+	rift_rng.seed = Codex.get_daily_seed() ^ 0xDEADC0DE
+	var cells: Array = []
+	var attempts     := 0
+	while cells.size() < count and attempts < 50:
+		attempts += 1
+		var c := Vector2i(
+			rift_rng.randi_range(0, HexGrid.COLS - 1),
+			rift_rng.randi_range(0, HexGrid.ROWS - 1)
+		)
+		if _blocked.has(c):
+			continue
+		if HexGrid.hex_distance(c, Vector2i(3, 3)) < 2:
+			continue
+		if c in cells:
+			continue
+		cells.append(c)
+	return cells
+
+
+func _draw_rift_cells() -> void:
+	if _rift_cells.is_empty():
+		return
+	var t     := fmod(Time.get_ticks_msec() / 1100.0, 1.0)
+	var alpha := (1.0 - t) * 0.70
+	var color := Color(0.60, 0.22, 1.0, alpha)
+	var inner := HexGrid.HEX_SIZE * (0.55 + t * 0.30)
+	for c in _rift_cells:
+		var center := HexGrid.cell_to_pixel(c as Vector2i) + _grid_offset
+		# Pulsing hex ring
+		var verts := HexGrid.hex_vertices(inner)
+		var pts   := PackedVector2Array()
+		for v in verts:
+			pts.append(center + v)
+		pts.append(pts[0])
+		draw_polyline(pts, color, 2.2)
+		# Label
+		draw_string(ThemeDB.fallback_font,
+			center + Vector2(-9.0, 4.0),
+			"RIFT",
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 7,
+			Color(0.80, 0.45, 1.0, 0.80)
+		)

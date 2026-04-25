@@ -11,6 +11,7 @@ uniform float blur_amount    : hint_range(0.0, 12.0) = 0.0;
 uniform float overexposure   : hint_range(0.0, 1.0)  = 0.0;
 uniform float film_grain_str : hint_range(0.0, 0.12) = 0.028;
 uniform float vignette_str   : hint_range(0.0, 2.0)  = 0.75;
+uniform float vhs_tracking   : hint_range(0.0, 1.0)  = 0.0;
 
 // Hash for film grain — UV + TIME keeps it animated
 float hash21(vec2 p) {
@@ -50,6 +51,17 @@ void fragment() {
     // Film grain — animated via TIME built-in
     float grain = (hash21(UV * tex_sz + vec2(TIME * 7.3, TIME * 11.9)) * 2.0 - 1.0);
     col.rgb    += grain * film_grain_str;
+
+    // VHS tracking — row-based horizontal jitter + RGB color bleed
+    if (vhs_tracking > 0.0) {
+        float row_jitter = (hash21(vec2(floor(UV.y * 60.0), TIME * 1.8)) * 2.0 - 1.0)
+                          * vhs_tracking * 0.015;
+        vec2  vhs_uv    = vec2(UV.x + row_jitter, UV.y);
+        vec4  vhs_col   = texture(TEXTURE, vhs_uv);
+        vhs_col.r       = texture(TEXTURE, vhs_uv + vec2(vhs_tracking * 0.012, 0.0)).r;
+        vhs_col.b       = texture(TEXTURE, vhs_uv - vec2(vhs_tracking * 0.009, 0.0)).b;
+        col             = mix(col, vhs_col, vhs_tracking * 0.80);
+    }
 
     // Vignette
     vec2  uvc = UV - 0.5;

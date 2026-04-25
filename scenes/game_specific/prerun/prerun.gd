@@ -1,6 +1,6 @@
 ## PreRun — Expedition briefing screen between main menu and field phase.
-## Shows the daily cryptid silhouette (procedural geometry), zone/weather conditions,
-## distance hint, and streak bonus before the player commits to a run.
+## Shows the daily cryptid silhouette (PNG sprite or procedural fallback), zone/weather
+## conditions, distance hint, and streak bonus before the player commits to a run.
 ## Step 18: Pre-run briefing. Beautified: scan lines, vignette, styled buttons.
 
 extends Node2D
@@ -17,6 +17,7 @@ extends Node2D
 var _daily:         Dictionary = {}
 var _cryptid_color: Color      = Color(0.45, 0.80, 0.35)
 var _pulse_t:       float      = 0.0
+var _sil_sprite:    Sprite2D   = null   # null when no PNG asset exists
 
 
 # =====================================================================
@@ -58,17 +59,40 @@ func _ready() -> void:
 	UIStyler.style_button(_begin_btn, _cryptid_color)
 	UIStyler.style_button(_back_btn,  UIStyler.ACCENT_MUTED)
 
+	_setup_silhouette_sprite(ctype)
 	AudioManager.play_music("main_menu")
 	queue_redraw()
 
 
+func _setup_silhouette_sprite(ctype: String) -> void:
+	var path := "res://resources/textures/cryptids/silhouettes/%s_silhouette.png" % ctype
+	if not ResourceLoader.exists(path):
+		return
+	var tex := load(path) as Texture2D
+	if not tex:
+		return
+	_sil_sprite          = Sprite2D.new()
+	_sil_sprite.texture  = tex
+	_sil_sprite.position = Vector2(get_viewport_rect().size.x * 0.5, 205.0)
+	_sil_sprite.modulate = Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
+	# Scale to fit within roughly 110px wide
+	var tex_w := float(tex.get_width())
+	if tex_w > 0.0:
+		_sil_sprite.scale = Vector2.ONE * (110.0 / tex_w)
+	add_child(_sil_sprite)
+
+
 func _process(delta: float) -> void:
 	_pulse_t += delta
+	# Pulse the sprite alpha when we have a PNG silhouette
+	if _sil_sprite:
+		var pulse := 0.5 + sin(_pulse_t * 1.4) * 0.18
+		_sil_sprite.modulate.a = 0.65 + pulse * 0.20
 	queue_redraw()
 
 
 # =====================================================================
-# DRAWING — procedural cryptid silhouette
+# DRAWING — glow rings + atmosphere; procedural silhouette only as fallback
 # =====================================================================
 
 func _draw() -> void:
@@ -79,16 +103,21 @@ func _draw() -> void:
 	_draw_scanlines(vp)
 	_draw_glow_rings(center, pulse)
 
-	var ctype: String = _daily.get("cryptid_type", "bigfoot") as String
+	if not _sil_sprite:
+		var ctype: String = _daily.get("cryptid_type", "bigfoot") as String
+		_draw_unknown(center, pulse) if ctype not in ["bigfoot","mothman","chupacabra","nessie"] \
+			else _draw_procedural(ctype, center, pulse)
+
+	_draw_vignette(vp)
+	_draw_divider(vp)
+
+
+func _draw_procedural(ctype: String, center: Vector2, pulse: float) -> void:
 	match ctype:
 		"bigfoot":    _draw_bigfoot(center, pulse)
 		"mothman":    _draw_mothman(center, pulse)
 		"chupacabra": _draw_chupacabra(center, pulse)
 		"nessie":     _draw_nessie(center, pulse)
-		_:            _draw_unknown(center, pulse)
-
-	_draw_vignette(vp)
-	_draw_divider(vp)
 
 
 func _draw_glow_rings(center: Vector2, pulse: float) -> void:
@@ -103,36 +132,33 @@ func _draw_glow_rings(center: Vector2, pulse: float) -> void:
 
 func _draw_bigfoot(center: Vector2, pulse: float) -> void:
 	var c    := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
-	var hang := 42.0 + pulse * 4.0   # arms hang lower at peak pulse
-	draw_circle(center + Vector2(0, -44), 16, c)                              # head
-	draw_rect(Rect2(center + Vector2(-26, -30), Vector2(52, 14)), c)          # wide shoulders
-	draw_rect(Rect2(center + Vector2(-18, -20), Vector2(36, 36)), c)          # torso
-	draw_rect(Rect2(center + Vector2(-14, 14), Vector2(12, 28)), c)           # left leg
-	draw_rect(Rect2(center + Vector2(2,   14), Vector2(12, 28)), c)           # right leg
-	draw_rect(Rect2(center + Vector2(-38, -22), Vector2(12, hang)), c)        # left arm
-	draw_rect(Rect2(center + Vector2(26,  -22), Vector2(12, hang)), c)        # right arm
+	var hang := 42.0 + pulse * 4.0
+	draw_circle(center + Vector2(0, -44), 16, c)
+	draw_rect(Rect2(center + Vector2(-26, -30), Vector2(52, 14)), c)
+	draw_rect(Rect2(center + Vector2(-18, -20), Vector2(36, 36)), c)
+	draw_rect(Rect2(center + Vector2(-14, 14), Vector2(12, 28)), c)
+	draw_rect(Rect2(center + Vector2(2,   14), Vector2(12, 28)), c)
+	draw_rect(Rect2(center + Vector2(-38, -22), Vector2(12, hang)), c)
+	draw_rect(Rect2(center + Vector2(26,  -22), Vector2(12, hang)), c)
 
 
 func _draw_mothman(center: Vector2, pulse: float) -> void:
 	var c  := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
-	var ww := 62.0 + pulse * 10.0   # wings spread with pulse
-	# Left wing
+	var ww := 62.0 + pulse * 10.0
 	draw_colored_polygon(PackedVector2Array([
 		center + Vector2(-8, -12),
 		center + Vector2(-ww, -52),
 		center + Vector2(-ww + 18, 18),
 		center + Vector2(-12, 22),
 	]), c)
-	# Right wing (mirrored)
 	draw_colored_polygon(PackedVector2Array([
 		center + Vector2(8, -12),
 		center + Vector2(ww, -52),
 		center + Vector2(ww - 18, 18),
 		center + Vector2(12, 22),
 	]), c)
-	draw_circle(center + Vector2(0, -12), 12, c)                              # body/head
-	draw_rect(Rect2(center + Vector2(-7, 0), Vector2(14, 26)), c)             # lower body
-	# Glowing red eyes
+	draw_circle(center + Vector2(0, -12), 12, c)
+	draw_rect(Rect2(center + Vector2(-7, 0), Vector2(14, 26)), c)
 	var eye_a : float = 0.7 + pulse * 0.25
 	draw_circle(center + Vector2(-5, -16), 4, Color(0.95, 0.08, 0.04, eye_a))
 	draw_circle(center + Vector2(5,  -16), 4, Color(0.95, 0.08, 0.04, eye_a))
@@ -140,38 +166,35 @@ func _draw_mothman(center: Vector2, pulse: float) -> void:
 
 func _draw_chupacabra(center: Vector2, pulse: float) -> void:
 	var c := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
-	# Crouched lean body, forward-jutting head
-	draw_circle(center + Vector2(-12, -12), 11, c)                            # head
+	draw_circle(center + Vector2(-12, -12), 11, c)
 	draw_colored_polygon(PackedVector2Array([
 		center + Vector2(-6, -4),
 		center + Vector2(22, 2),
 		center + Vector2(20, 22),
 		center + Vector2(-8, 20),
-	]), c)                                                                     # torso
-	# Spine ridge spines — oscillate height with pulse
+	]), c)
 	for i: int in 4:
 		var rx : float = 12.0 + i * 4.5
 		var ry : float = -14.0 + i * 2.5 - pulse * 3.0
 		draw_circle(center + Vector2(rx, ry), 3.5, c)
-	draw_rect(Rect2(center + Vector2(4,  18), Vector2(9, 22)), c)             # rear leg
-	draw_rect(Rect2(center + Vector2(-9, 16), Vector2(9, 18)), c)             # front leg
+	draw_rect(Rect2(center + Vector2(4,  18), Vector2(9, 22)), c)
+	draw_rect(Rect2(center + Vector2(-9, 16), Vector2(9, 18)), c)
 
 
 func _draw_nessie(center: Vector2, pulse: float) -> void:
 	var c     := Color(_cryptid_color.r, _cryptid_color.g, _cryptid_color.b, 0.82)
-	var bob_y : float = sin(_pulse_t * 0.9) * 4.0   # gentle surface bob
+	var bob_y : float = sin(_pulse_t * 0.9) * 4.0
 	var off   := Vector2(0, bob_y)
-	draw_circle(center + off + Vector2(-22, -38), 8, c)                       # head
-	draw_colored_polygon(PackedVector2Array([                                  # neck
+	draw_circle(center + off + Vector2(-22, -38), 8, c)
+	draw_colored_polygon(PackedVector2Array([
 		center + off + Vector2(-28, -32),
 		center + off + Vector2(-16, -32),
 		center + off + Vector2(-4, -10),
 		center + off + Vector2(-18, -10),
 	]), c)
-	draw_circle(center + off + Vector2(-4, 6), 20, c)                         # hump 1
-	draw_circle(center + off + Vector2(24, 4), 15, c)                         # hump 2
-	draw_circle(center + off + Vector2(44, 8), 10, c)                         # hump 3
-	# Water line
+	draw_circle(center + off + Vector2(-4, 6), 20, c)
+	draw_circle(center + off + Vector2(24, 4), 15, c)
+	draw_circle(center + off + Vector2(44, 8), 10, c)
 	var wa : float = 0.30 + pulse * 0.18
 	draw_line(
 		center + Vector2(-68, 26 + bob_y),

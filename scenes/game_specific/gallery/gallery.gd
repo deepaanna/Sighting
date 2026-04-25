@@ -19,6 +19,17 @@ func _ready() -> void:
 			"res://scenes/game_specific/menu/main_menu.tscn", 0.3
 		)
 	)
+
+	# Best-wall export button — added dynamically above the grid
+	var wall_btn                   := Button.new()
+	wall_btn.text                   = "EXPORT BEST WALL"
+	wall_btn.custom_minimum_size    = Vector2(0, 38)
+	wall_btn.size_flags_horizontal  = Control.SIZE_EXPAND_FILL
+	UIStyler.style_button(wall_btn, UIStyler.ACCENT_ORANGE)
+	wall_btn.pressed.connect(_export_best_wall)
+	_back_btn.get_parent().add_child(wall_btn)
+	_back_btn.get_parent().move_child(wall_btn, _back_btn.get_index())
+
 	_populate()
 
 
@@ -101,6 +112,60 @@ func _on_cell_tapped(entry: Dictionary) -> void:
 		cryptid, grade, score,
 	]
 	var abs_path := ProjectSettings.globalize_path("user://gallery/" + filename)
+	ShareManager._system_share(abs_path, text)
+
+
+func _export_best_wall() -> void:
+	var all_entries: Array = Codex.get_value("gallery", "photos", [])
+	var entries: Array = all_entries.filter(
+		func(e: Dictionary) -> bool:
+			return (e.get("file", "") as String).begins_with("sighting_")
+	)
+	if entries.is_empty():
+		return
+
+	# Sort by score desc; take best 6
+	entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return a.get("meta", {}).get("score", 0) > b.get("meta", {}).get("score", 0)
+	)
+	var picks: Array = entries.slice(0, mini(6, entries.size()))
+
+	const COLS   := 2
+	const ROWS   := 3
+	const TW     := 160
+	const TH     := 145
+	const GAP    := 4
+	const PAD    := 8
+	const BAR_H  := 22
+
+	var img_w := COLS * TW + (COLS - 1) * GAP + PAD * 2
+	var img_h := ROWS * TH + (ROWS - 1) * GAP + PAD * 2 + BAR_H
+
+	var wall := Image.create(img_w, img_h, false, Image.FORMAT_RGB8)
+	wall.fill(Color(0.06, 0.06, 0.08))
+
+	for idx in picks.size():
+		var entry: Dictionary = picks[idx]
+		var filename: String  = entry.get("file", "")
+		if not FileAccess.file_exists("user://gallery/" + filename):
+			continue
+		var photo := Image.load_from_file(
+			ProjectSettings.globalize_path("user://gallery/" + filename)
+		)
+		if not photo:
+			continue
+		photo.resize(TW, TH, Image.INTERPOLATE_BILINEAR)
+		var col_pos := idx % COLS
+		var row_pos := idx / COLS
+		var x := PAD + col_pos * (TW + GAP)
+		var y := PAD + BAR_H + row_pos * (TH + GAP)
+		wall.blit_rect(photo, Rect2i(0, 0, TW, TH), Vector2i(x, y))
+
+	var wall_path := "user://gallery/best_wall.png"
+	wall.save_png(wall_path)
+
+	var abs_path := ProjectSettings.globalize_path(wall_path)
+	var text     := "My best SIGHTING! captures — #SIGHTING #ConspiracyCodex"
 	ShareManager._system_share(abs_path, text)
 
 

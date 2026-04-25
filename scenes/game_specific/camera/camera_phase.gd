@@ -50,9 +50,11 @@ const DRIFT_LERP    := 0.07
 
 # ── Blur pipeline ─────────────────────────────────────────────────────
 var _blur_mat:       ShaderMaterial
-var _blur_amount:    float = 0.0
-var _overexposure:   float = 0.0
-var _shake_mag:      float = 0.0   # px, >0 only when very close
+var _blur_amount:    float  = 0.0
+var _overexposure:   float  = 0.0
+var _shake_mag:      float  = 0.0
+var _upgrade_mode:   String = ""
+var _base_grain:     float  = 0.028  # set by upgrade; skunk_ape ramps on top
 
 # ── Session state ─────────────────────────────────────────────────────
 var _elapsed:           float = 0.0
@@ -80,6 +82,7 @@ func _ready() -> void:
 	_setup_viewport_texture()
 	_setup_blur_shader()
 	_apply_blur_for_distance()
+	_detect_and_apply_upgrade()
 
 	_cryptid_view.position = VP_CENTER
 	_cryptid_view.setup(session.get("hex_distance", 3))
@@ -118,6 +121,38 @@ func _setup_blur_shader() -> void:
 	_blur_mat        = ShaderMaterial.new()
 	_blur_mat.shader = load("res://shaders/blur.gdshader")
 	_vp_display.material = _blur_mat
+
+
+func _detect_and_apply_upgrade() -> void:
+	var upgrades: Array = Codex.get_value("sighting", "camera_upgrades", []) as Array
+	var weather  := session.get("weather", "clear") as String
+	var active   := ""
+	if weather == "night" and "night_vision" in upgrades:
+		active = "night_vision"
+	elif weather == "fog" and "vintage" in upgrades:
+		active = "vintage"
+	elif weather == "rain" and "vhs" in upgrades:
+		active = "vhs"
+	elif upgrades.size() > 0:
+		active = upgrades[0] as String
+	_apply_upgrade(active)
+
+
+func _apply_upgrade(mode: String) -> void:
+	_upgrade_mode = mode
+	match mode:
+		"vintage":
+			_base_grain = 0.08
+			_blur_mat.set_shader_parameter("vignette_str", 1.20)
+		"night_vision":
+			_base_grain = 0.045
+			_blur_mat.set_shader_parameter("vignette_str", 1.40)
+		"vhs":
+			_base_grain = 0.055
+			_blur_mat.set_shader_parameter("vhs_tracking", 0.55)
+	_blur_mat.set_shader_parameter("film_grain_str", _base_grain)
+	_vf_frame.upgrade_mode = mode
+	_vf_frame.queue_redraw()
 
 
 func _apply_blur_for_distance() -> void:
@@ -188,6 +223,7 @@ func _process(delta: float) -> void:
 
 	_tick_cryptid(delta)
 	_tick_shake()
+	_tick_skunk_ape_grain()
 	_update_frame_overlay()
 
 	if remaining <= 0.0:
@@ -218,11 +254,29 @@ func _tick_cryptid(delta: float) -> void:
 			randf_range(-half.y, half.y)
 		)
 
+	# Jersey Devil flies — dominant vertical arc, faster cycle
+	var ctype  := session.get("cryptid_type", "") as String
+	var h_amp  := DRIFT_H_AMP
+	var v_amp  := DRIFT_V_AMP
+	var v_spd  := DRIFT_V_SPEED
+	if ctype == "jersey_devil":
+		h_amp = DRIFT_V_AMP * 0.55   # narrow horizontal
+		v_amp = DRIFT_H_AMP * 1.30   # tall vertical swoop
+		v_spd = DRIFT_V_SPEED * 1.6  # faster vertical cycle
+
 	var drift_target := VP_CENTER + Vector2(
-		sin(_elapsed * DRIFT_H_SPEED) * DRIFT_H_AMP,
-		cos(_elapsed * DRIFT_V_SPEED) * DRIFT_V_AMP
+		sin(_elapsed * DRIFT_H_SPEED) * h_amp,
+		cos(_elapsed * v_spd)         * v_amp
 	)
 	_cryptid_pos = _cryptid_pos.lerp(drift_target, DRIFT_LERP)
+
+
+func _tick_skunk_ape_grain() -> void:
+	if session.get("cryptid_type", "") != "skunk_ape":
+		return
+	# Film grain degrades linearly over the 20-second phase (×2.5 at the end)
+	var ramp := (_elapsed / PHASE_TIME) * (_base_grain * 1.5)
+	_blur_mat.set_shader_parameter("film_grain_str", _base_grain + ramp)
 
 
 func _tick_shake() -> void:
@@ -260,7 +314,8 @@ func _on_capture_pressed() -> void:
 	var base        := _calc_base_score(dist, sweet)
 	var slider_mult := _calc_slider_mult(_slider_value)
 	var time_bonus  := maxf(0.0, 1.0 - (_elapsed / PHASE_TIME)) * 0.2
-	var score       := int(clampf((base * slider_mult + time_bonus) * 100.0, 0.0, 100.0))
+	var rift_bonus  := session.get("rift_bonus", 0) as int
+	var score       := mini(int(clampf((base * slider_mult + time_bonus) * 100.0, 0.0, 100.0)) + rift_bonus, 100)
 	if score > _best_score:
 		_best_score = score
 

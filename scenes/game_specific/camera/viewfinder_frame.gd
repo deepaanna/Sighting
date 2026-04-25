@@ -24,6 +24,9 @@ var export_grade:        String = ""
 var export_score:        int    = 0
 var export_cryptid:      String = ""
 
+# Camera upgrade active this run ("", "vintage", "night_vision", "vhs")
+var upgrade_mode: String = ""
+
 
 func _draw() -> void:
     _draw_scanline_layer()
@@ -31,6 +34,7 @@ func _draw() -> void:
     _draw_corner_brackets()
     _draw_focus_reticle()
     _draw_roc_thirds()
+    _draw_upgrade_overlay()
     if not export_overlay_mode:
         _draw_shot_pips()
     _draw_rec_indicator()
@@ -222,6 +226,57 @@ func _draw_export_overlay() -> void:
         "SIGHTING! — A Conspiracy Codex Game",
         HORIZONTAL_ALIGNMENT_CENTER, int(VF_SIZE.x), 8,
         Color(1.0, 1.0, 1.0, 0.35))
+
+
+# ── Camera upgrade visual overlays ───────────────────────────────────
+func _draw_upgrade_overlay() -> void:
+    var font := ThemeDB.fallback_font
+    var bot_y := VF_ORIGIN.y + VF_SIZE.y - 22.0
+    match upgrade_mode:
+        "vintage":
+            # Warm sepia wash
+            draw_rect(Rect2(VF_ORIGIN, VF_SIZE), Color(0.65, 0.45, 0.10, 0.18))
+            # Burned corner vignette blobs
+            for corner: Vector2 in [
+                VF_ORIGIN,
+                VF_ORIGIN + Vector2(VF_SIZE.x, 0.0),
+                VF_ORIGIN + Vector2(0.0, VF_SIZE.y),
+                VF_ORIGIN + VF_SIZE,
+            ]:
+                draw_circle(corner, 40.0, Color(0.10, 0.05, 0.00, 0.32))
+            draw_string(font, Vector2(VF_ORIGIN.x + 6.0, bot_y),
+                "VINTAGE", HORIZONTAL_ALIGNMENT_LEFT, -1, 9,
+                Color(0.85, 0.70, 0.30, 0.65))
+        "night_vision":
+            # Green phosphor tint
+            draw_rect(Rect2(VF_ORIGIN, VF_SIZE), Color(0.04, 0.52, 0.07, 0.22))
+            # Extra dense scanlines over the phosphor tint
+            for y in range(int(VF_ORIGIN.y) + 2, int(VF_ORIGIN.y + VF_SIZE.y), 3):
+                draw_line(
+                    Vector2(VF_ORIGIN.x + 1.0, float(y)),
+                    Vector2(VF_ORIGIN.x + VF_SIZE.x - 1.0, float(y)),
+                    Color(0.0, 0.0, 0.0, 0.13), 1.0
+                )
+            draw_string(font, Vector2(VF_ORIGIN.x + 6.0, bot_y),
+                "NV-CAM", HORIZONTAL_ALIGNMENT_LEFT, -1, 9,
+                Color(0.28, 0.95, 0.22, 0.75))
+        "vhs":
+            # Slight blue-shift tint
+            draw_rect(Rect2(VF_ORIGIN, VF_SIZE), Color(0.04, 0.06, 0.42, 0.10))
+            # "SP" record-mode badge
+            draw_string(font, Vector2(VF_ORIGIN.x + 6.0, bot_y),
+                "SP", HORIZONTAL_ALIGNMENT_LEFT, -1, 9,
+                Color(0.78, 0.28, 0.95, 0.80))
+            # VHS-style counter (seconds from Unix epoch modulo an hour)
+            var secs  := int(Time.get_unix_time_from_system())
+            var hh    := (secs / 3600) % 24
+            var mm    := (secs / 60) % 60
+            var ss    := secs % 60
+            draw_string(font,
+                Vector2(VF_ORIGIN.x + VF_SIZE.x - 6.0, bot_y),
+                "%d:%02d:%02d" % [hh, mm, ss],
+                HORIZONTAL_ALIGNMENT_RIGHT, -1, 9,
+                Color(1.0, 0.95, 0.10, 0.85))
 
 
 static func _grade_color(grade: String) -> Color:

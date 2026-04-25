@@ -41,10 +41,12 @@ func _draw() -> void:
 	if not _revealed:
 		return
 	match _ctype:
-		"nessie":     _draw_nessie()
-		"mothman":    _draw_mothman()
-		"chupacabra": _draw_chupacabra()
-		_:            _draw_bigfoot()
+		"nessie":        _draw_nessie()
+		"mothman":       _draw_mothman()
+		"chupacabra":    _draw_chupacabra()
+		"jersey_devil":  _draw_jersey_devil()
+		"skunk_ape":     _draw_skunk_ape()
+		_:               _draw_bigfoot()
 
 
 # ── Bigfoot ───────────────────────────────────────────────────────────────
@@ -129,6 +131,60 @@ func _draw_chupacabra() -> void:
 		draw_circle(Vector2(-5.0 + i * 4.5, -9.5), 2.2, spine)
 	draw_circle(Vector2(-6, -4), 2.2, eye)
 	draw_circle(Vector2(-6, -4), 1.0, Color(1.0, 0.4, 0.3))
+
+
+# ── Jersey Devil ──────────────────────────────────────────────────────────
+
+func _draw_jersey_devil() -> void:
+	var body := Color(0.18, 0.12, 0.24)
+	var wing := Color(0.10, 0.07, 0.16)
+	var eye  := Color(0.95, 0.18, 0.04)
+	# Wings — swept up, thin
+	var lw := PackedVector2Array([
+		Vector2(0, 0), Vector2(-20, -12), Vector2(-16, 4), Vector2(-8, 7)
+	])
+	var rw := PackedVector2Array([
+		Vector2(0, 0), Vector2( 20, -12), Vector2( 16, 4), Vector2( 8, 7)
+	])
+	draw_colored_polygon(lw, wing)
+	draw_colored_polygon(rw, wing)
+	# Thin body + head
+	_blob(Vector2(0, 2), 3, 9, body)
+	_blob(Vector2(0, -13), 4, 4, body)
+	# Horns
+	draw_line(Vector2(-2, -16), Vector2(-5, -22), body, 1.5)
+	draw_line(Vector2( 2, -16), Vector2( 5, -22), body, 1.5)
+	# Eye glow
+	draw_circle(Vector2(3, -13), 2.0, Color(eye.r, eye.g, eye.b, 0.5))
+	draw_circle(Vector2(3, -13), 1.2, eye)
+	# Long whip tail
+	draw_line(Vector2(0, 8), Vector2(6, 14), body, 1.8)
+	draw_line(Vector2(6, 14), Vector2(3, 19), body, 1.5)
+
+
+# ── Skunk Ape ─────────────────────────────────────────────────────────────
+
+func _draw_skunk_ape() -> void:
+	var fur   := Color(0.14, 0.10, 0.08)
+	var snout := Color(0.28, 0.18, 0.12)
+	var eye   := Color(0.55, 0.82, 0.12)
+	# Feet
+	_blob(Vector2(-5, 15), 6, 3, fur)
+	_blob(Vector2( 5, 15), 6, 3, fur)
+	# Legs
+	_blob(Vector2(-5, 7), 4, 7, fur)
+	_blob(Vector2( 5, 7), 4, 7, fur)
+	# Hunched torso
+	_blob(Vector2(0, -2), 11, 9, fur)
+	# Long knuckle-dragging arms
+	_blob(Vector2(-14, 3), 5, 7, fur)
+	_blob(Vector2( 14, 3), 5, 7, fur)
+	# Head (set forward, not upright)
+	_blob(Vector2(4, -13), 8, 7, fur)
+	# Elongated snout
+	_blob(Vector2(9, -11), 4, 2, snout)
+	draw_circle(Vector2(1, -16), 1.8, eye)
+	draw_circle(Vector2(6, -15), 1.8, eye)
 
 
 # ── Shared ────────────────────────────────────────────────────────────────
